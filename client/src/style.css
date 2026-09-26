@@ -1,0 +1,32 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: Arial, sans-serif;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  margin: 0;
+  padding: 16px;
+}
+
+#canvas {
+  flex: 1;
+  display: block;
+  border: 1px solid #ccc;
+}

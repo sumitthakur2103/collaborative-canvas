@@ -19,6 +19,8 @@ export class DrawingController {
   private committedCanvasManager: CanvasManager;
   private isDrawing = false;
   private currentPoints: Point[] = [];
+  private pendingPoints: Point[] = [];
+  private updateTimer: number | null = null;
   private currentTool: "brush" | "eraser" = "brush";
   private currentColor = "#000000";
   private currentWidth = 5;
@@ -39,6 +41,33 @@ export class DrawingController {
     this.websocket = websocket;
     this.setupRemoteDrawing();
     this.setupEventListeners();
+  }
+
+  private flushPendingPoints(): void {
+    console.log("Sending batch:", this.pendingPoints.length, "points");
+    if (!this.currentStrokeId || this.pendingPoints.length === 0) {
+      return;
+    }
+
+    this.websocket.sendStrokeUpdate({
+      type: "stroke:update",
+      strokeId: this.currentStrokeId,
+      points: [...this.pendingPoints],
+    });
+
+    this.pendingPoints = [];
+  }
+
+  private scheduleStrokeUpdate(): void {
+    if (this.updateTimer !== null) {
+      return;
+    }
+
+    this.updateTimer = window.setTimeout(() => {
+      this.updateTimer = null;
+
+      this.flushPendingPoints();
+    }, 20);
   }
 
   setTool(tool: "brush" | "eraser"): void {
@@ -236,6 +265,8 @@ export class DrawingController {
 
     this.currentPoints.push(point);
 
+    this.pendingPoints.push(point);
+
     if (this.currentStrokeId) {
       const liveStroke = this.liveStrokes.get(this.currentStrokeId);
 
@@ -246,15 +277,17 @@ export class DrawingController {
 
     this.canvasManager.drawTo(point.x, point.y);
 
+    this.scheduleStrokeUpdate();
+
     if (!this.currentStrokeId) {
       return;
     }
 
-    this.websocket.sendStrokeUpdate({
-      type: "stroke:update",
-      strokeId: this.currentStrokeId,
-      points: [point],
-    });
+    // this.websocket.sendStrokeUpdate({
+    //   type: "stroke:update",
+    //   strokeId: this.currentStrokeId,
+    //   points: [point],
+    // });
   };
 
   private handlePointerUp = (event: PointerEvent): void => {
@@ -267,6 +300,13 @@ export class DrawingController {
     this.canvas.releasePointerCapture(event.pointerId);
 
     if (this.currentStrokeId) {
+      if (this.updateTimer !== null) {
+        window.clearTimeout(this.updateTimer);
+        this.updateTimer = null;
+      }
+
+      this.flushPendingPoints();
+
       this.websocket.sendStrokeEnd({
         type: "stroke:end",
         strokeId: this.currentStrokeId,
@@ -274,6 +314,7 @@ export class DrawingController {
     }
 
     this.currentPoints = [];
+    this.pendingPoints = [];
     this.currentStrokeId = null;
   };
 

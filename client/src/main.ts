@@ -1,6 +1,7 @@
 import "./style.css";
 
 import { CanvasManager } from "./canvas";
+import { DrawingController } from "./drawing";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -25,3 +26,8 @@ if (!canvas) {
 const canvasManager = new CanvasManager(canvas);
 
 canvasManager.setStrokeStyle("#000000", 5);
+
+new DrawingController(
+  canvas,
+  canvasManager
+);

@@ -4,6 +4,7 @@ import type {
   StrokeStartMessage,
   StrokeUpdateMessage,
   StrokeEndMessage,
+  OperationCommittedMessage,
 } from "../../shared/protocol";
 
 export class WebSocketManager {
@@ -13,6 +14,16 @@ export class WebSocketManager {
     this.socket = io("http://localhost:3000");
 
     this.setupListeners();
+  }
+
+  private operationCommittedListeners: Array<
+    (message: OperationCommittedMessage) => void
+  > = [];
+
+  onOperationCommitted(
+    listener: (message: OperationCommittedMessage) => void,
+  ): void {
+    this.operationCommittedListeners.push(listener);
   }
 
   private strokeStartListeners: Array<(message: StrokeStartMessage) => void> =
@@ -65,6 +76,15 @@ export class WebSocketManager {
         listener(message);
       }
     });
+
+    this.socket.on(
+      "operation:committed",
+      (message: OperationCommittedMessage) => {
+        for (const listener of this.operationCommittedListeners) {
+          listener(message);
+        }
+      },
+    );
   }
 
   sendStrokeStart(message: StrokeStartMessage): void {

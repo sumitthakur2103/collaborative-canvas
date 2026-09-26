@@ -9,6 +9,11 @@ interface RemoteStroke {
   width: number;
 }
 
+interface CommittedOperation {
+  operation: DrawingOperation;
+  sequence: number;
+}
+
 export class DrawingController {
   private websocket: WebSocketManager;
   private canvas: HTMLCanvasElement;
@@ -20,6 +25,8 @@ export class DrawingController {
   private currentStrokeId: string | null = null;
 
   private remoteStrokes = new Map<string, RemoteStroke>();
+  private operations: CommittedOperation[] = [];
+
   constructor(
     canvas: HTMLCanvasElement,
     canvasManager: CanvasManager,
@@ -30,6 +37,24 @@ export class DrawingController {
     this.websocket = websocket;
     this.setupRemoteDrawing();
     this.setupEventListeners();
+  }
+
+  private renderOperation(operation: DrawingOperation): void {
+    if (operation.points.length === 0) {
+      return;
+    }
+
+    this.canvasManager.setStrokeStyle(operation.color, operation.width);
+
+    const firstPoint = operation.points[0];
+
+    this.canvasManager.beginStroke(firstPoint.x, firstPoint.y);
+
+    for (let i = 1; i < operation.points.length; i++) {
+      const point = operation.points[i];
+
+      this.canvasManager.drawTo(point.x, point.y);
+    }
   }
 
   private setupRemoteDrawing(): void {
@@ -61,6 +86,19 @@ export class DrawingController {
 
     this.websocket.onStrokeEnd((message) => {
       this.remoteStrokes.delete(message.strokeId);
+    });
+
+    this.websocket.onOperationCommitted((message) => {
+      console.log("Canonical operation received:", message);
+
+      this.operations.push({
+        operation: message.operation,
+        sequence: message.sequence,
+      });
+
+      console.log("Total operations:", this.operations.length);
+
+      console.log("Committed sequence:", message.sequence);
     });
   }
 

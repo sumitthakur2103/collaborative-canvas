@@ -30,13 +30,54 @@ h1 {
   padding: 16px;
 }
 
-#canvas {
+.canvas-wrapper {
+  position: relative;
   width: 100%;
   height: 100%;
-  display: block;
-  border: 1px solid #ccc;
+}
 
+.canvas-wrapper canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#committed-canvas {
   background: white;
+  border: 1px solid #ccc;
+}
 
+#live-canvas {
+  background: transparent;
+  border: 1px solid #ccc;
   touch-action: none;
+}
+
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: 700px;
+}
+
+.canvas-container canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+#committed-canvas {
+  z-index: 1;
+  pointer-events: none;
+}
+
+#live-canvas {
+  z-index: 2;
+  pointer-events: auto;
 }

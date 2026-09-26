@@ -2,6 +2,7 @@ import "./style.css";
 
 import { CanvasManager } from "./canvas";
 import { DrawingController } from "./drawing";
+import { WebSocketManager } from "./websocket";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -27,7 +28,11 @@ const canvasManager = new CanvasManager(canvas);
 
 canvasManager.setStrokeStyle("#000000", 5);
 
+
+const websocket = new WebSocketManager();
+
 new DrawingController(
   canvas,
-  canvasManager
+  canvasManager,
+  websocket
 );

@@ -1,47 +1,77 @@
 import { CanvasManager } from "./canvas";
+import { WebSocketManager } from "./websocket";
 
-export interface Point {
-  x: number;
-  y: number;
+import type { DrawingOperation, Point } from "./types";
+
+interface RemoteStroke {
+  userId: string;
+  color: string;
+  width: number;
 }
 
 export class DrawingController {
+  private websocket: WebSocketManager;
   private canvas: HTMLCanvasElement;
   private canvasManager: CanvasManager;
-
   private isDrawing = false;
   private currentPoints: Point[] = [];
 
+  private readonly userId = crypto.randomUUID();
+  private currentStrokeId: string | null = null;
+
+  private remoteStrokes = new Map<string, RemoteStroke>();
   constructor(
     canvas: HTMLCanvasElement,
-    canvasManager: CanvasManager
+    canvasManager: CanvasManager,
+    websocket: WebSocketManager,
   ) {
     this.canvas = canvas;
     this.canvasManager = canvasManager;
-
+    this.websocket = websocket;
+    this.setupRemoteDrawing();
     this.setupEventListeners();
   }
 
+  private setupRemoteDrawing(): void {
+    this.websocket.onStrokeStart((message) => {
+      this.remoteStrokes.set(message.strokeId, {
+        userId: message.userId,
+        color: message.color,
+        width: message.width,
+      });
+
+      this.canvasManager.setStrokeStyle(message.color, message.width);
+
+      this.canvasManager.beginStroke(message.point.x, message.point.y);
+    });
+
+    this.websocket.onStrokeUpdate((message) => {
+      const stroke = this.remoteStrokes.get(message.strokeId);
+
+      if (!stroke) {
+        return;
+      }
+
+      this.canvasManager.setStrokeStyle(stroke.color, stroke.width);
+
+      for (const point of message.points) {
+        this.canvasManager.drawTo(point.x, point.y);
+      }
+    });
+
+    this.websocket.onStrokeEnd((message) => {
+      this.remoteStrokes.delete(message.strokeId);
+    });
+  }
+
   private setupEventListeners(): void {
-    this.canvas.addEventListener(
-      "pointerdown",
-      this.handlePointerDown
-    );
+    this.canvas.addEventListener("pointerdown", this.handlePointerDown);
 
-    this.canvas.addEventListener(
-      "pointermove",
-      this.handlePointerMove
-    );
+    this.canvas.addEventListener("pointermove", this.handlePointerMove);
 
-    this.canvas.addEventListener(
-      "pointerup",
-      this.handlePointerUp
-    );
+    this.canvas.addEventListener("pointerup", this.handlePointerUp);
 
-    this.canvas.addEventListener(
-      "pointercancel",
-      this.handlePointerUp
-    );
+    this.canvas.addEventListener("pointercancel", this.handlePointerUp);
   }
 
   private handlePointerDown = (event: PointerEvent): void => {
@@ -53,10 +83,20 @@ export class DrawingController {
 
     this.currentPoints = [point];
 
-    this.canvasManager.beginStroke(
-      point.x,
-      point.y
-    );
+    this.canvasManager.beginStroke(point.x, point.y);
+
+    const strokeId = crypto.randomUUID();
+    this.currentStrokeId = strokeId;
+
+    this.websocket.sendStrokeStart({
+      type: "stroke:start",
+      strokeId,
+      userId: this.userId,
+      tool: "brush",
+      color: "#000000",
+      width: 5,
+      point,
+    });
   };
 
   private handlePointerMove = (event: PointerEvent): void => {
@@ -68,10 +108,17 @@ export class DrawingController {
 
     this.currentPoints.push(point);
 
-    this.canvasManager.drawTo(
-      point.x,
-      point.y
-    );
+    this.canvasManager.drawTo(point.x, point.y);
+
+    if (!this.currentStrokeId) {
+      return;
+    }
+
+    this.websocket.sendStrokeUpdate({
+      type: "stroke:update",
+      strokeId: this.currentStrokeId,
+      points: [point],
+    });
   };
 
   private handlePointerUp = (event: PointerEvent): void => {
@@ -83,9 +130,28 @@ export class DrawingController {
 
     this.canvas.releasePointerCapture(event.pointerId);
 
-    console.log("Completed points:", this.currentPoints);
+    if (this.currentStrokeId) {
+      this.websocket.sendStrokeEnd({
+        type: "stroke:end",
+        strokeId: this.currentStrokeId,
+      });
+    }
+
+    const operation: DrawingOperation = {
+      id: crypto.randomUUID(),
+      type: "stroke",
+      userId: this.userId,
+      tool: "brush",
+      color: "#000000",
+      width: 5,
+      points: [...this.currentPoints],
+      timestamp: Date.now(),
+    };
+
+    console.log("Completed operation:", operation);
 
     this.currentPoints = [];
+    this.currentStrokeId = null;
   };
 
   private getCanvasPoint(event: PointerEvent): Point {
@@ -93,7 +159,7 @@ export class DrawingController {
 
     return {
       x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      y: event.clientY - rect.top,
     };
   }
 }

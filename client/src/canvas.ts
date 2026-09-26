@@ -26,6 +26,17 @@ export class CanvasManager {
     this.ctx.lineJoin = "round";
   }
 
+  setEraserStyle(width: number): void {
+    this.ctx.globalCompositeOperation = "destination-out";
+    this.ctx.lineWidth = width;
+  }
+
+  setBrushStyle(color: string, width: number): void {
+    this.ctx.globalCompositeOperation = "source-over";
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = width;
+  }
+
   setStrokeStyle(color: string, width: number): void {
     this.ctx.strokeStyle = color;
     this.ctx.lineWidth = width;
@@ -42,11 +53,6 @@ export class CanvasManager {
   }
 
   clear(): void {
-    this.ctx.clearRect(
-      0,
-      0,
-      this.canvas.width,
-      this.canvas.height
-    );
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 }

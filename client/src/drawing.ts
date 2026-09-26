@@ -60,7 +60,11 @@ export class DrawingController {
       return;
     }
 
-    canvasManager.setStrokeStyle(operation.color, operation.width);
+    if (operation.tool === "eraser") {
+      canvasManager.setEraserStyle(operation.width);
+    } else {
+      canvasManager.setBrushStyle(operation.color, operation.width);
+    }
 
     const firstPoint = operation.points[0];
 
@@ -109,8 +113,11 @@ export class DrawingController {
       this.liveStrokes.set(message.strokeId, {
         operation,
       });
-
-      this.canvasManager.setStrokeStyle(message.color, message.width);
+      if (message.tool === "eraser") {
+        this.canvasManager.setEraserStyle(message.width);
+      } else {
+        this.canvasManager.setBrushStyle(message.color, message.width);
+      }
 
       this.canvasManager.beginStroke(message.point.x, message.point.y);
     });
@@ -126,10 +133,14 @@ export class DrawingController {
         liveStroke.operation.points.push(point);
       }
 
-      this.canvasManager.setStrokeStyle(
-        liveStroke.operation.color,
-        liveStroke.operation.width,
-      );
+      if (liveStroke.operation.tool === "eraser") {
+        this.canvasManager.setEraserStyle(liveStroke.operation.width);
+      } else {
+        this.canvasManager.setBrushStyle(
+          liveStroke.operation.color,
+          liveStroke.operation.width,
+        );
+      }
 
       for (const point of message.points) {
         this.canvasManager.drawTo(point.x, point.y);
@@ -179,7 +190,11 @@ export class DrawingController {
 
     this.currentPoints = [point];
 
-    this.canvasManager.setStrokeStyle(this.currentColor, this.currentWidth);
+    if (this.currentTool === "eraser") {
+      this.canvasManager.setEraserStyle(this.currentWidth);
+    } else {
+      this.canvasManager.setBrushStyle(this.currentColor, this.currentWidth);
+    }
 
     this.canvasManager.beginStroke(point.x, point.y);
 

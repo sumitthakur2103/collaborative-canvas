@@ -49,8 +49,18 @@ export class DrawingController {
     this.websocket.onUsersUpdate((message) => {
       this.userColors.clear();
 
+      const onlineUserIds = new Set<string>();
+
       for (const user of message.users) {
         this.userColors.set(user.userId, user.color);
+        onlineUserIds.add(user.userId);
+      }
+
+      for (const [userId, cursor] of this.remoteCursors) {
+        if (!onlineUserIds.has(userId)) {
+          cursor.remove();
+          this.remoteCursors.delete(userId);
+        }
       }
 
       this.updateOnlineUsers(message.users);

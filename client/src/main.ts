@@ -38,7 +38,7 @@ app.innerHTML = `
   <div id="online-users">
     <span>Online: 0</span>
   </div>
-  
+
   <main class="canvas-container">
     <canvas id="committed-canvas"></canvas>
     <canvas id="live-canvas"></canvas>
@@ -107,4 +107,11 @@ widthSlider.addEventListener("input", () => {
   drawingController.setWidth(width);
 
   widthValue.textContent = String(width);
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.metaKey && event.key === "z") {
+    event.preventDefault();
+    drawingController.undo();
+  }
 });

@@ -8,10 +8,14 @@ import type {
   CursorMoveMessage,
   UserJoinMessage,
   UsersUpdateMessage,
+  HistoryUpdateMessage,
 } from "../../shared/protocol";
 
 export class WebSocketManager {
   private socket: Socket;
+  private historyUpdateListeners: Array<
+    (message: HistoryUpdateMessage) => void
+  > = [];
 
   constructor() {
     this.socket = io("http://localhost:3000");
@@ -21,6 +25,10 @@ export class WebSocketManager {
 
   private usersUpdateListeners: Array<(message: UsersUpdateMessage) => void> =
     [];
+
+  onHistoryUpdate(listener: (message: HistoryUpdateMessage) => void): void {
+    this.historyUpdateListeners.push(listener);
+  }
 
   onUsersUpdate(listener: (message: UsersUpdateMessage) => void): void {
     this.usersUpdateListeners.push(listener);
@@ -109,6 +117,12 @@ export class WebSocketManager {
       }
     });
 
+    this.socket.on("history:update", (message: HistoryUpdateMessage) => {
+      for (const listener of this.historyUpdateListeners) {
+        listener(message);
+      }
+    });
+
     this.socket.on(
       "operation:committed",
       (message: OperationCommittedMessage) => {
@@ -129,5 +143,9 @@ export class WebSocketManager {
 
   sendStrokeEnd(message: StrokeEndMessage): void {
     this.socket.emit("stroke:end", message);
+  }
+
+  sendUndo(): void {
+    this.socket.emit("history:undo");
   }
 }

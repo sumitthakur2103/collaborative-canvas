@@ -2,14 +2,9 @@ import { CanvasManager } from "./canvas";
 import { WebSocketManager } from "./websocket";
 
 import type { DrawingOperation, Point } from "./types";
-import type { UserPresence } from "../../shared/protocol";
+import type { UserPresence, HistoryOperation } from "../../shared/protocol";
 interface LiveStroke {
   operation: DrawingOperation;
-}
-
-interface CommittedOperation {
-  operation: DrawingOperation;
-  sequence: number;
 }
 
 export class DrawingController {
@@ -27,9 +22,9 @@ export class DrawingController {
   private readonly userId = crypto.randomUUID();
   private currentStrokeId: string | null = null;
   private liveStrokes = new Map<string, LiveStroke>();
-  private operations: CommittedOperation[] = [];
   private remoteCursors = new Map<string, HTMLDivElement>();
   private userColors = new Map<string, string>();
+  private history: HistoryOperation[] = [];
   constructor(
     canvas: HTMLCanvasElement,
     canvasManager: CanvasManager,
@@ -59,8 +54,27 @@ export class DrawingController {
         userId: this.userId,
       });
     });
+
+    this.websocket.onHistoryUpdate((message) => {
+      this.history = message.operations;
+      this.renderHistory();
+    });
   }
 
+  private renderHistory(): void {
+    this.committedCanvasManager.clear();
+
+    const activeOperations = this.history
+      .filter((item) => !item.undone)
+      .sort((a, b) => a.sequence - b.sequence);
+
+    for (const item of activeOperations) {
+      this.renderOperation(item.operation, this.committedCanvasManager);
+    }
+  }
+  public undo(): void {
+    this.websocket.sendUndo();
+  }
   private updateOnlineUsers(users: UserPresence[]): void {
     const container = document.getElementById("online-users");
 
@@ -174,18 +188,6 @@ export class DrawingController {
     }
   }
 
-  private renderCommittedOperations(): void {
-    this.committedCanvasManager.clear();
-
-    const sortedOperations = [...this.operations].sort(
-      (a, b) => a.sequence - b.sequence,
-    );
-
-    for (const committed of sortedOperations) {
-      this.renderOperation(committed.operation, this.committedCanvasManager);
-    }
-  }
-
   private renderLiveStrokes(): void {
     this.canvasManager.clear();
 
@@ -264,19 +266,18 @@ export class DrawingController {
     this.websocket.onOperationCommitted((message) => {
       console.log("Canonical operation received:", message);
 
-      this.operations.push({
+      this.history.push({
         operation: message.operation,
         sequence: message.sequence,
+        undone: false,
       });
 
       this.liveStrokes.delete(message.operation.id);
 
-      this.renderCommittedOperations();
-
+      this.renderHistory();
       this.renderLiveStrokes();
 
-      console.log("Total operations:", this.operations.length);
-
+      console.log("Total history operations:", this.history.length);
       console.log("Committed sequence:", message.sequence);
     });
   }

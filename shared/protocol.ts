@@ -86,3 +86,22 @@ export interface UsersUpdateMessage {
   type: "users:update";
   users: UserPresence[];
 }
+
+export interface UndoRequestMessage {
+  type: "history:undo";
+}
+
+export interface RedoRequestMessage {
+  type: "history:redo";
+}
+
+export interface HistoryOperation {
+  operation: DrawingOperation;
+  sequence: number;
+  undone: boolean;
+}
+
+export interface HistoryUpdateMessage {
+  type: "history:update";
+  operations: HistoryOperation[];
+}

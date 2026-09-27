@@ -9,6 +9,7 @@ import type {
   DrawingOperation,
   CursorMoveMessage,
   UserJoinMessage,
+  HistoryOperation,
 } from "../shared/protocol";
 
 const app = express();
@@ -32,7 +33,7 @@ const userColorPalette = [
 
 const activeStrokes = new Map<string, DrawingOperation>();
 
-const operations: DrawingOperation[] = [];
+const history: HistoryOperation[] = [];
 let nextSequence = 1;
 
 app.get("/", (_req, res) => {
@@ -107,13 +108,19 @@ io.on("connection", (socket) => {
       return;
     }
 
-    operations.push(operation);
-
     activeStrokes.delete(message.strokeId);
 
     const sequence = nextSequence;
     nextSequence++;
 
+    const historyOperation: HistoryOperation = {
+      operation,
+      sequence,
+      undone: false,
+    };
+
+    history.push(historyOperation);
+    console.log("History:", history);
     socket.broadcast.emit("stroke:end", message);
 
     io.emit("operation:committed", {
@@ -122,9 +129,26 @@ io.on("connection", (socket) => {
       sequence,
     });
 
-    console.log("Committed operation:", operation);
+    // console.log("Committed operation:", operation);
 
-    console.log("Sequence:", sequence);
+    // console.log("Sequence:", sequence);
+  });
+
+  socket.on("history:undo", () => {
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (!history[i].undone) {
+        history[i].undone = true;
+
+        console.log("Undo operation:", history[i]);
+
+        io.emit("history:update", {
+          type: "history:update",
+          operations: history,
+        });
+
+        break;
+      }
+    }
   });
 
   socket.on("cursor:move", (message: CursorMoveMessage) => {

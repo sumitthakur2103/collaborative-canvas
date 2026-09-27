@@ -8,6 +8,7 @@ import type {
   StrokeEndMessage,
   DrawingOperation,
   CursorMoveMessage,
+  UserJoinMessage,
 } from "../shared/protocol";
 
 const app = express();
@@ -20,6 +21,15 @@ const io = new Server(httpServer, {
   },
 });
 
+const userColorPalette = [
+  "#e63946",
+  "#457b9d",
+  "#2a9d8f",
+  "#f4a261",
+  "#9b5de5",
+  "#f15bb5",
+];
+
 const activeStrokes = new Map<string, DrawingOperation>();
 
 const operations: DrawingOperation[] = [];
@@ -29,8 +39,33 @@ app.get("/", (_req, res) => {
   res.send("Collaborative Canvas Server is running");
 });
 
+const connectedUsers = new Map<string, string>();
+const userColors = new Map<string, string>();
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
+
+  socket.on("user:join", (message: UserJoinMessage) => {
+    connectedUsers.set(message.userId, socket.id);
+
+    const color =
+      userColors.get(message.userId) ??
+      userColorPalette[(connectedUsers.size - 1) % userColorPalette.length];
+
+    userColors.set(message.userId, color);
+
+    const users = Array.from(connectedUsers.keys()).map((userId) => ({
+      userId,
+      color: userColors.get(userId)!,
+    }));
+
+    io.emit("users:update", {
+      type: "users:update",
+      users,
+    });
+
+    console.log("User joined:", message.userId);
+    console.log("Online users:", connectedUsers.size);
+  });
 
   socket.on("stroke:start", (message: StrokeStartMessage) => {
     console.log("Stroke started:", message.strokeId);
@@ -97,7 +132,27 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log(`User disconnected: ${socket.id}`);
+    for (const [userId, socketId] of connectedUsers.entries()) {
+      if (socketId === socket.id) {
+        connectedUsers.delete(userId);
+
+        const users = Array.from(connectedUsers.keys()).map((userId) => ({
+          userId,
+          color: userColors.get(userId)!,
+        }));
+
+        io.emit("users:update", {
+          type: "users:update",
+          users,
+        });
+        console.log("User left:", userId);
+        console.log("Online users:", connectedUsers.size);
+
+        break;
+      }
+    }
+
+    console.log(`Socket disconnected: ${socket.id}`);
   });
 });
 

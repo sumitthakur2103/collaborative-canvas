@@ -2,7 +2,7 @@ import { CanvasManager } from "./canvas";
 import { WebSocketManager } from "./websocket";
 
 import type { DrawingOperation, Point } from "./types";
-
+import type { UserPresence } from "../../shared/protocol";
 interface LiveStroke {
   operation: DrawingOperation;
 }
@@ -29,7 +29,7 @@ export class DrawingController {
   private liveStrokes = new Map<string, LiveStroke>();
   private operations: CommittedOperation[] = [];
   private remoteCursors = new Map<string, HTMLDivElement>();
-
+  private userColors = new Map<string, string>();
   constructor(
     canvas: HTMLCanvasElement,
     canvasManager: CanvasManager,
@@ -42,6 +42,51 @@ export class DrawingController {
     this.websocket = websocket;
     this.setupRemoteDrawing();
     this.setupEventListeners();
+
+    this.websocket.onUsersUpdate((message) => {
+      this.userColors.clear();
+
+      for (const user of message.users) {
+        this.userColors.set(user.userId, user.color);
+      }
+
+      this.updateOnlineUsers(message.users);
+    });
+
+    this.websocket.onConnect(() => {
+      this.websocket.sendUserJoin({
+        type: "user:join",
+        userId: this.userId,
+      });
+    });
+  }
+
+  private updateOnlineUsers(users: UserPresence[]): void {
+    const container = document.getElementById("online-users");
+
+    if (!container) {
+      return;
+    }
+
+    container.innerHTML = "";
+
+    const title = document.createElement("span");
+    title.textContent = `Online: ${users.length}`;
+
+    container.appendChild(title);
+
+    for (const user of users) {
+      const userDot = document.createElement("span");
+
+      userDot.style.display = "inline-block";
+      userDot.style.width = "10px";
+      userDot.style.height = "10px";
+      userDot.style.borderRadius = "50%";
+      userDot.style.backgroundColor = user.color;
+      userDot.style.marginLeft = "8px";
+
+      container.appendChild(userDot);
+    }
   }
 
   private createRemoteCursor(userId: string): HTMLDivElement {
@@ -51,7 +96,8 @@ export class DrawingController {
     cursor.style.width = "12px";
     cursor.style.height = "12px";
     cursor.style.borderRadius = "50%";
-    cursor.style.backgroundColor = "red";
+    // cursor.style.backgroundColor = "red";
+    cursor.style.background = this.userColors.get(userId) ?? "#ff0000";
     cursor.style.border = "2px solid white";
     cursor.style.pointerEvents = "none";
     cursor.style.transform = "translate(-50%, -50%)";

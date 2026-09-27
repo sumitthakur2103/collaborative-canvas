@@ -34,7 +34,11 @@ app.innerHTML = `
       <span id="width-value">5</span>
     </label>
   </div>
-
+  
+  <div id="online-users">
+    <span>Online: 0</span>
+  </div>
+  
   <main class="canvas-container">
     <canvas id="committed-canvas"></canvas>
     <canvas id="live-canvas"></canvas>

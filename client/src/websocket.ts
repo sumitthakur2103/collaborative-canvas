@@ -6,6 +6,8 @@ import type {
   StrokeEndMessage,
   OperationCommittedMessage,
   CursorMoveMessage,
+  UserJoinMessage,
+  UsersUpdateMessage,
 } from "../../shared/protocol";
 
 export class WebSocketManager {
@@ -15,6 +17,21 @@ export class WebSocketManager {
     this.socket = io("http://localhost:3000");
 
     this.setupListeners();
+  }
+
+  private usersUpdateListeners: Array<(message: UsersUpdateMessage) => void> =
+    [];
+
+  onUsersUpdate(listener: (message: UsersUpdateMessage) => void): void {
+    this.usersUpdateListeners.push(listener);
+  }
+
+  sendUserJoin(message: UserJoinMessage): void {
+    this.socket.emit("user:join", message);
+  }
+
+  onConnect(callback: () => void): void {
+    this.socket.on("connect", callback);
   }
 
   sendCursorMove(message: CursorMoveMessage): void {
@@ -66,6 +83,12 @@ export class WebSocketManager {
 
     this.socket.on("connect_error", (error) => {
       console.error("WebSocket connection error:", error.message);
+    });
+
+    this.socket.on("users:update", (message: UsersUpdateMessage) => {
+      for (const listener of this.usersUpdateListeners) {
+        listener(message);
+      }
     });
 
     this.socket.on("stroke:start", (message: StrokeStartMessage) => {

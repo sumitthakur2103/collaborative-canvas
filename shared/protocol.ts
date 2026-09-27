@@ -61,3 +61,28 @@ export interface CursorMoveMessage {
   x: number;
   y: number;
 }
+
+export interface UserPresence {
+  userId: string;
+  color: string;
+}
+
+export interface UserJoinMessage {
+  type: "user:join";
+  userId: string;
+}
+
+export interface UserJoinedMessage {
+  type: "user:joined";
+  user: UserPresence;
+}
+
+export interface UserLeftMessage {
+  type: "user:left";
+  userId: string;
+}
+
+export interface UsersUpdateMessage {
+  type: "users:update";
+  users: UserPresence[];
+}

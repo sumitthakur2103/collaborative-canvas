@@ -18,14 +18,16 @@ export class CanvasManager {
 
   private setupCanvas(): void {
     const rect = this.canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
 
-    this.canvas.width = rect.width;
-    this.canvas.height = rect.height;
+    this.canvas.width = rect.width * dpr;
+    this.canvas.height = rect.height * dpr;
+
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     this.ctx.lineCap = "round";
     this.ctx.lineJoin = "round";
   }
-
   setEraserStyle(width: number): void {
     this.ctx.globalCompositeOperation = "destination-out";
     this.ctx.lineWidth = width;
@@ -54,5 +56,9 @@ export class CanvasManager {
 
   clear(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  resize(): void {
+    this.setupCanvas();
   }
 }

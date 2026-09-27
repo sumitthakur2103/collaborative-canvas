@@ -38,6 +38,14 @@ export class DrawingController {
     this.setupRemoteDrawing();
     this.setupEventListeners();
 
+    window.addEventListener("resize", () => {
+      this.committedCanvasManager.resize();
+      this.canvasManager.resize();
+
+      this.renderHistory();
+      this.renderLiveStrokes();
+    });
+
     this.websocket.onUsersUpdate((message) => {
       this.userColors.clear();
 

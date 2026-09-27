@@ -72,9 +72,15 @@ export class DrawingController {
       this.renderOperation(item.operation, this.committedCanvasManager);
     }
   }
+
   public undo(): void {
     this.websocket.sendUndo();
   }
+
+  public redo(): void {
+    this.websocket.sendRedo();
+  }
+
   private updateOnlineUsers(users: UserPresence[]): void {
     const container = document.getElementById("online-users");
 

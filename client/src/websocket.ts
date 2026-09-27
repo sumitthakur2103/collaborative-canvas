@@ -148,4 +148,8 @@ export class WebSocketManager {
   sendUndo(): void {
     this.socket.emit("history:undo");
   }
+
+  sendRedo(): void {
+    this.socket.emit("history:redo");
+  }
 }

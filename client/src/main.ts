@@ -14,6 +14,7 @@ app.innerHTML = `
   <h1>Collaborative Canvas</h1>
 
   <div class="toolbar">
+    <button id="redo-btn">Redo</button>
     <button id="brush-btn">Brush</button>
     <button id="eraser-btn">Eraser</button>
 
@@ -69,6 +70,12 @@ const drawingController = new DrawingController(
   websocket,
 );
 
+const redoButton = document.getElementById("redo-btn");
+
+redoButton?.addEventListener("click", () => {
+  drawingController.redo();
+});
+
 const brushButton = document.querySelector<HTMLButtonElement>("#brush-btn");
 
 const eraserButton = document.querySelector<HTMLButtonElement>("#eraser-btn");
@@ -110,8 +117,13 @@ widthSlider.addEventListener("input", () => {
 });
 
 window.addEventListener("keydown", (event) => {
-  if (event.metaKey && event.key === "z") {
+  if (event.metaKey && event.key === "z" && !event.shiftKey) {
     event.preventDefault();
     drawingController.undo();
+  }
+
+  if (event.metaKey && event.shiftKey && event.key === "z") {
+    event.preventDefault();
+    drawingController.redo();
   }
 });

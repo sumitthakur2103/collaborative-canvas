@@ -34,6 +34,8 @@ const userColorPalette = [
 const activeStrokes = new Map<string, DrawingOperation>();
 
 const history: HistoryOperation[] = [];
+const redoStack: HistoryOperation[] = [];
+
 let nextSequence = 1;
 
 app.get("/", (_req, res) => {
@@ -118,8 +120,12 @@ io.on("connection", (socket) => {
       sequence,
       undone: false,
     };
-
     history.push(historyOperation);
+
+    // A new operation creates a new history branch,
+    // so previously undone operations can no longer be redone.
+    redoStack.length = 0;
+
     console.log("History:", history);
     socket.broadcast.emit("stroke:end", message);
 
@@ -139,6 +145,8 @@ io.on("connection", (socket) => {
       if (!history[i].undone) {
         history[i].undone = true;
 
+        redoStack.push(history[i]);
+
         console.log("Undo operation:", history[i]);
 
         io.emit("history:update", {
@@ -149,6 +157,24 @@ io.on("connection", (socket) => {
         break;
       }
     }
+  });
+
+  socket.on("history:redo", () => {
+    const historyOperation = redoStack.pop();
+
+    if (!historyOperation) {
+      console.log("Nothing to redo");
+      return;
+    }
+
+    historyOperation.undone = false;
+
+    console.log("Redo operation:", historyOperation);
+
+    io.emit("history:update", {
+      type: "history:update",
+      operations: history,
+    });
   });
 
   socket.on("cursor:move", (message: CursorMoveMessage) => {

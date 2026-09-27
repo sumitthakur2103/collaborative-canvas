@@ -105,3 +105,8 @@ export interface HistoryUpdateMessage {
   type: "history:update";
   operations: HistoryOperation[];
 }
+
+export interface InitialStateMessage {
+  type: "state:initial";
+  operations: HistoryOperation[];
+}

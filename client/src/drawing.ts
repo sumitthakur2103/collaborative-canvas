@@ -55,6 +55,11 @@ export class DrawingController {
       });
     });
 
+    this.websocket.onInitialState((message) => {
+      this.history = message.operations;
+      this.renderHistory();
+    });
+
     this.websocket.onHistoryUpdate((message) => {
       this.history = message.operations;
       this.renderHistory();

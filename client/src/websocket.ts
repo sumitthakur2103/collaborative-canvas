@@ -9,6 +9,7 @@ import type {
   UserJoinMessage,
   UsersUpdateMessage,
   HistoryUpdateMessage,
+  InitialStateMessage,
 } from "../../shared/protocol";
 
 export class WebSocketManager {
@@ -16,6 +17,9 @@ export class WebSocketManager {
   private historyUpdateListeners: Array<
     (message: HistoryUpdateMessage) => void
   > = [];
+
+  private initialStateListeners: Array<(message: InitialStateMessage) => void> =
+    [];
 
   constructor() {
     this.socket = io("http://localhost:3000");
@@ -25,6 +29,10 @@ export class WebSocketManager {
 
   private usersUpdateListeners: Array<(message: UsersUpdateMessage) => void> =
     [];
+
+  onInitialState(listener: (message: InitialStateMessage) => void): void {
+    this.initialStateListeners.push(listener);
+  }
 
   onHistoryUpdate(listener: (message: HistoryUpdateMessage) => void): void {
     this.historyUpdateListeners.push(listener);
@@ -95,6 +103,12 @@ export class WebSocketManager {
 
     this.socket.on("users:update", (message: UsersUpdateMessage) => {
       for (const listener of this.usersUpdateListeners) {
+        listener(message);
+      }
+    });
+
+    this.socket.on("state:initial", (message: InitialStateMessage) => {
+      for (const listener of this.initialStateListeners) {
         listener(message);
       }
     });

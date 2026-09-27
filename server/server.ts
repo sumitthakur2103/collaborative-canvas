@@ -66,6 +66,12 @@ io.on("connection", (socket) => {
       users,
     });
 
+    // Send existing canvas state to the newly joined user
+    socket.emit("state:initial", {
+      type: "state:initial",
+      operations: history,
+    });
+
     console.log("User joined:", message.userId);
     console.log("Online users:", connectedUsers.size);
   });

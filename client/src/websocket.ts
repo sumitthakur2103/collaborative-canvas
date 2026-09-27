@@ -22,7 +22,10 @@ export class WebSocketManager {
     [];
 
   constructor() {
-    this.socket = io(import.meta.env.VITE_SERVER_URL);
+    const serverUrl =
+      import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
+
+    this.socket = io(serverUrl);
 
     this.setupListeners();
   }

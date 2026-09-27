@@ -20,7 +20,6 @@ export interface DrawingOperation {
   timestamp: number;
 }
 
-
 export interface StrokeStartMessage {
   type: "stroke:start";
 
@@ -54,4 +53,11 @@ export interface OperationCommittedMessage {
   operation: DrawingOperation;
 
   sequence: number;
+}
+
+export interface CursorMoveMessage {
+  type: "cursor:move";
+  userId: string;
+  x: number;
+  y: number;
 }

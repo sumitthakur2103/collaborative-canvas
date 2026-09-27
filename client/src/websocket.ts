@@ -5,6 +5,7 @@ import type {
   StrokeUpdateMessage,
   StrokeEndMessage,
   OperationCommittedMessage,
+  CursorMoveMessage,
 } from "../../shared/protocol";
 
 export class WebSocketManager {
@@ -14,6 +15,14 @@ export class WebSocketManager {
     this.socket = io("http://localhost:3000");
 
     this.setupListeners();
+  }
+
+  sendCursorMove(message: CursorMoveMessage): void {
+    this.socket.emit("cursor:move", message);
+  }
+
+  onCursorMove(callback: (message: CursorMoveMessage) => void): void {
+    this.socket.on("cursor:move", callback);
   }
 
   private operationCommittedListeners: Array<

@@ -28,6 +28,7 @@ export class DrawingController {
   private currentStrokeId: string | null = null;
   private liveStrokes = new Map<string, LiveStroke>();
   private operations: CommittedOperation[] = [];
+  private remoteCursors = new Map<string, HTMLDivElement>();
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -41,6 +42,26 @@ export class DrawingController {
     this.websocket = websocket;
     this.setupRemoteDrawing();
     this.setupEventListeners();
+  }
+
+  private createRemoteCursor(userId: string): HTMLDivElement {
+    const cursor = document.createElement("div");
+
+    cursor.style.position = "absolute";
+    cursor.style.width = "12px";
+    cursor.style.height = "12px";
+    cursor.style.borderRadius = "50%";
+    cursor.style.backgroundColor = "red";
+    cursor.style.border = "2px solid white";
+    cursor.style.pointerEvents = "none";
+    cursor.style.transform = "translate(-50%, -50%)";
+    cursor.style.zIndex = "3";
+
+    cursor.dataset.userId = userId;
+
+    this.canvas.parentElement?.appendChild(cursor);
+
+    return cursor;
   }
 
   private flushPendingPoints(): void {
@@ -81,6 +102,7 @@ export class DrawingController {
   setWidth(width: number): void {
     this.currentWidth = width;
   }
+
   private renderOperation(
     operation: DrawingOperation,
     canvasManager: CanvasManager,
@@ -180,6 +202,19 @@ export class DrawingController {
       console.log("Remote stroke ended:", message.strokeId);
     });
 
+    this.websocket.onCursorMove((message) => {
+      let cursor = this.remoteCursors.get(message.userId);
+
+      if (!cursor) {
+        cursor = this.createRemoteCursor(message.userId);
+
+        this.remoteCursors.set(message.userId, cursor);
+      }
+
+      cursor.style.left = `${message.x}px`;
+      cursor.style.top = `${message.y}px`;
+    });
+
     this.websocket.onOperationCommitted((message) => {
       console.log("Canonical operation received:", message);
 
@@ -257,11 +292,18 @@ export class DrawingController {
   };
 
   private handlePointerMove = (event: PointerEvent): void => {
+    const point = this.getCanvasPoint(event);
+
+    this.websocket.sendCursorMove({
+      type: "cursor:move",
+      userId: this.userId,
+      x: point.x,
+      y: point.y,
+    });
+
     if (!this.isDrawing) {
       return;
     }
-
-    const point = this.getCanvasPoint(event);
 
     this.currentPoints.push(point);
 

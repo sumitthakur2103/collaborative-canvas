@@ -7,6 +7,7 @@ import type {
   StrokeUpdateMessage,
   StrokeEndMessage,
   DrawingOperation,
+  CursorMoveMessage,
 } from "../shared/protocol";
 
 const app = express();
@@ -89,6 +90,10 @@ io.on("connection", (socket) => {
     console.log("Committed operation:", operation);
 
     console.log("Sequence:", sequence);
+  });
+
+  socket.on("cursor:move", (message: CursorMoveMessage) => {
+    socket.broadcast.emit("cursor:move", message);
   });
 
   socket.on("disconnect", () => {

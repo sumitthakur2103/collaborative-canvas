@@ -11,31 +11,91 @@ if (!app) {
 }
 
 app.innerHTML = `
-  <h1>Collaborative Canvas</h1>
+  <div class="app-header">
+    <div class="brand">
+      <span class="brand-mark">✦</span>
+      <span>Collaborative Canvas</span>
+    </div>
+  </div>
 
   <div class="toolbar">
-    <button id="redo-btn">Redo</button>
-    <button id="brush-btn">Brush</button>
-    <button id="eraser-btn">Eraser</button>
+    <div class="toolbar-group">
+      <button
+        id="undo-btn"
+        class="tool-button icon-button"
+        type="button"
+        aria-label="Undo"
+        title="Undo"
+      >
+        ↶
+      </button>  
+      <button
+        id="redo-btn"
+        class="tool-button icon-button"
+        type="button"
+        aria-label="Redo"
+        title="Redo"
+      >
+        ↷
+      </button>
+    </div>
 
-    <label>
-      Color:
-      <input id="color-picker" type="color" value="#000000" />
+    <div class="toolbar-divider"></div>
+
+    <div class="toolbar-group">
+      <button
+        id="brush-btn"
+        class="tool-button"
+        type="button"
+        title="Brush"
+      >
+        <span class="tool-icon">✎</span>
+        <span>Brush</span>
+      </button>
+
+      <button
+        id="eraser-btn"
+        class="tool-button"
+        type="button"
+        title="Eraser"
+      >
+        <span class="tool-icon">⌫</span>
+        <span>Eraser</span>
+      </button>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <label class="color-control" title="Choose color">
+      <span class="color-label">Color</span>
+      <span class="color-preview">
+        <input
+          id="color-picker"
+          type="color"
+          value="#000000"
+          aria-label="Choose color"
+        />
+      </span>
     </label>
 
-    <label>
-      Width:
+    <div class="toolbar-divider"></div>
+
+    <label class="width-control" title="Stroke width">
+      <span class="width-label">Width</span>
+
       <input
         id="width-slider"
         type="range"
         min="1"
         max="30"
         value="5"
+        aria-label="Stroke width"
       />
-      <span id="width-value">5</span>
+
+      <span id="width-value" class="width-value">5</span>
     </label>
   </div>
-  
+
   <div id="online-users">
     <span>Online: 0</span>
   </div>
@@ -69,6 +129,12 @@ const drawingController = new DrawingController(
   committedCanvasManager,
   websocket,
 );
+
+const undoButton = document.getElementById("undo-btn");
+
+undoButton?.addEventListener("click", () => {
+  drawingController.undo();
+});
 
 const redoButton = document.getElementById("redo-btn");
 

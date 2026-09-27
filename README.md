@@ -6,6 +6,12 @@ Multiple users can draw on the same canvas simultaneously and see each other's d
 
 ---
 
+## Live
+
+```bash
+https://collaborative-canvas-psi-five.vercel.app/
+```
+
 ## Table of Contents
 
 - [Features](#features)
@@ -388,14 +394,13 @@ feat: improve canvas resize handling
 
 `Approximately 3 days (15+ hours) of development`
 
-Example: _Approximately 3 days of development._
-
 ---
 
 ## Demo
 
-- **Live Demo:** `[ADD DEPLOYED DEMO URL HERE]`
+- **Live Demo:** `https://collaborative-canvas-psi-five.vercel.app`
 - **GitHub Repository:** `https://github.com/sumitthakur2103/collaborative-canvas.git`
+- **Backend(Render):** `https://collaborative-canvas-server-8eu4.onrender.com`
 
 ---
 

@@ -377,15 +377,28 @@ Tested during development primarily in **Google Chrome**. The application should
 The project was developed incrementally using meaningful Git commits for major features and fixes. Examples of development checkpoints include:
 
 ```text
-chore: initialize project setup
-feat: setup canvas rendering
-feat: implement local canvas drawing
-feat: add drawing operation model
-feat: establish websocket connection
-feat: add drawing tools and eraser
-...
-fix: remove remote cursors on disconnect
-feat: improve canvas resize handling
+initialize project setup
+setup canvas rendering
+implement local canvas drawing
+render remote strokes
+track canonical drawing operations
+toolbar funcitonality added
+eraser functionality added
+network batching implemented
+remote cursor synchronization
+add online user presence
+implement global undo
+implement global redo
+sync initial canvas state
+improve canvas resize handling
+remove remote cursors on disconnect
+README added
+add architecture documentation
+prepare app for deployment
+support local and production server configuration
+deployed url added
+canvas ui updated
+final commit
 ```
 
 ---

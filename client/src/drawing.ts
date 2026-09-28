@@ -25,6 +25,7 @@ export class DrawingController {
   private remoteCursors = new Map<string, HTMLDivElement>();
   private userColors = new Map<string, string>();
   private history: HistoryOperation[] = [];
+
   constructor(
     canvas: HTMLCanvasElement,
     canvasManager: CanvasManager,
